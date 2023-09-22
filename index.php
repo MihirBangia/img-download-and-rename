@@ -1,60 +1,59 @@
 <?php
 
-$csvFile = "simpleproducts.csv";
+$csvFile = "InventoryDetails.csv";
 $csv = fopen($csvFile, "r");
-$destination = './images/';
+$destination = './image/';
 
 $sku = array();
-$ext = array();
 $newCsvData = array();
-$data = array();
+// $data = array();
 
 if ($csv !== FALSE) {
-    fgetcsv($csv);
+    $i = 0;
     while (!feof($csv)) {
         $data = fgetcsv($csv);
-        if (!empty($data)) {
+        if (!empty($data) && $i != 0) {
             array_push($sku, $data[0]);
-            print_r($data[0]);
-            $size = getimagesize($data[1]);
-            $extension = explode('/', $size['mime'])[1];
-            array_push($ext, $extension);
-
             file_put_contents(
                 $destination . basename($data[1]),
                 file_get_contents($data[1])
             );
         }
+        $i++;
         array_push($newCsvData, $data);
         // print_r($data);
-
     }
-
-    echo count($newCsvData);
+    array_push($newCsvData[0], 'New Url');
 
     $fileName = glob($destination . "*?", GLOB_BRACE);
-    print_r(count($fileName));
 
     for ($index = 0; $index < count($fileName); $index++) {
-        $rename = $destination . $sku[$index] . "." . $ext[$index];
-        rename($fileName[$index], $rename);
-        array_push($newCsvData[$index], $sku[$index] . "." . $ext[$index]);
-        unset($rename);
+
+        $size = getimagesize($fileName[$index]);
+        $extension = explode('/', $size['mime'])[1];
+
+        if ($extension == '') {
+            $rename = "NULL";
+            rename($fileName[$index], $destination . $rename);
+        } else {
+            $rename = $sku[$index] . "." . $extension;
+            rename($fileName[$index], $destination . $rename);
+        }
+
+        array_push($newCsvData[$index + 1], $rename);
+        unset($rename, $extension);
     }
-    print_r($newCsvData);
-
 }
-
+print_r($newCsvData[42]);
 fclose($csv);
 
-$fpo = fopen($csvFile, 'w');
+$updatedCsv = fopen($csvFile, 'w');
 
-if (!$fpo)
-    die("BROKE");
-fseek($fpo, 0);
-fputcsv($fpo, ['Sku', 'Image url', '', 'New image url']);
+if (!$updatedCsv)
+    die("Something went wrong!");
+// fseek($updatedCsv, 0);
 foreach ($newCsvData as $coulmns) {
-    fputcsv($fpo, $coulmns);
+    fputcsv($updatedCsv, $coulmns);
 }
-fclose($fpo);
+fclose($updatedCsv);
 ?>
