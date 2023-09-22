@@ -1,1 +1,3 @@
 # img-download-and-rename
+
+This is a php script which reads data from csv file and download image from there and rename context image  with sku from csv and set image name as sku.ImageExtension such as jpg,png,etc... 
