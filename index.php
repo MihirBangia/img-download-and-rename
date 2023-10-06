@@ -1,73 +1,41 @@
 <?php
 
-$csvFile = "image.csv";
-$csv = fopen($csvFile, "r");
-$destination = './product/';
-
-$sku = array();
-$newCsvData = array();
-$fileName = array();
-
-
-if ($csv !== FALSE) {
-    $i = 0;
-    while (!feof($csv)) {
-        $data = fgetcsv($csv);
-
-
-        if (!empty($data) && $i != 0) {
-            array_push($sku, $data[0]);
-            array_push($fileName, $destination . basename($data[1]));
-
-
-            $size = getimagesize($data[1]);
-            $extension = explode('/', $size['mime'])[1];
-            // print_r($extension);
-            // echo "<br/>";
-
-
-            if ($extension == '') {
-                echo "extension not found";
-                continue;
-            }
-            file_put_contents(
-                $destination . basename($data[1]),
-                file_get_contents($data[1])
-            );
-
-        }
-        $i++;
-        array_push($newCsvData, $data);
-
-    }
-    array_push($newCsvData[0], 'New Url');
-
-
-
-    // for ($index = 0; $index < count($fileName); $index++) {
-
-    //     $size = getimagesize($fileName[$index]);
-    //     $extension = explode('/', $size['mime'])[1];
-
-    //     $rename = uniqid($index) . '.' . $extension;
-    //     rename($fileName[$index], $destination . $rename);
-
-    //     array_push($newCsvData[$index + 1], $rename);
-    //     unset($rename, $extension);
-    // }
+function generateUniqueID()
+{
+    return uniqid();
 }
-// print_r($fileName);
-// echo "<br/> ";
-fclose($csv);
 
+$inputCsvFile = 'image.csv';
+$outputCsvFile = 'output.csv';
 
-// $updatedCsv = fopen('finalProductImage.csv', 'w');
-
-// if (!$updatedCsv)
-//     die("Something went wrong!");
-// fseek($updatedCsv, 0);
-// foreach ($newCsvData as $coulmns) {
-//     fputcsv($updatedCsv, $coulmns);
-// }
-// fclose($updatedCsv);
+if (($handle = fopen($inputCsvFile, 'r')) !== FALSE) {
+    $outputData = [];
+    while (($data = fgetcsv($handle)) !== FALSE) {
+        $url = $data[1];
+        $size = getimagesize($data[1]);
+        $extension = explode('/', $size['mime'])[1];
+        $uniqueID = generateUniqueID();
+        $newFileName = $uniqueID . '.' . $extension;
+        $imageData = file_get_contents($url);
+        if ($imageData !== FALSE) {
+            file_put_contents($newFileName, $imageData);
+            $data[1] = $newFileName;
+            $outputData[] = $data;
+        } else {
+            echo "Failed to download image from URL: $url\n";
+        }
+    }
+    fclose($handle);
+    if (($outputHandle = fopen($outputCsvFile, 'w')) !== FALSE) {
+        foreach ($outputData as $row) {
+            fputcsv($outputHandle, $row);
+        }
+        fclose($outputHandle);
+        echo "Output CSV file created: $outputCsvFile\n";
+    } else {
+        echo "Failed to create output CSV file.\n";
+    }
+} else {
+    echo "Failed to open input CSV file.\n";
+}
 ?>
